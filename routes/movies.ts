@@ -93,43 +93,35 @@ router.get('/:id', verify, async (req, res) => {
 
 //GET ALL
 router.get('/', verify, async (req, res) => {
-    const type = req.query.type;
-    const isPersian: any = !!req.query.isPersian;
-    //@ts-ignore
-    if (req.user.isAdmin) {
-        try {
-            let movies: IMovie[];
-            //all persian
-            if (isPersian === true) {
-                console.log('here');
-                movies = await Movie.find({isPersian: true});
-            }
-            //all none persian
-            if (isPersian === false)
-                movies = await Movie.find({isPersian: false});
-            //movies
-            if (type === 'movies') movies = await Movie.find({isSeries: false});
-            //series
-            if (type === 'series') movies = await Movie.find({isSeries: true});
-            //persian series
-            if (type === 'series' && isPersian === true)
-                movies = await Movie.find({isSeries: true, isPersian: true});
-            //foreign series
-            if (type === 'series' && isPersian === false)
-                movies = await Movie.find({isSeries: true, isPersian: false});
-            //persian movies
-            if (type === 'movies' && isPersian === true)
-                movies = await Movie.find({isSeries: false, isPersian: true});
-            //foreign movies
-            if (type === 'movies' && isPersian === false)
-                movies = await Movie.find({isSeries: false, isPersian: false});
-            if (!type && !isPersian) movies = await Movie.find();
-            return res.status(200).json(movies!.reverse());
-        } catch (error) {
-            return res.status(500).json(error);
-        }
+    const isSeries: any = req.query.isSeries === 'true';
+    const isPersian: any = req.query.isPersian === 'true';
+    const title: any = req.query.title;
+    try {
+        let movies: IMovie[];
+        if (title) {
+            movies = await Movie.find({title: {$regex: title, $options: 'i'}});
+        } else if (
+            req.query.isPersian !== undefined &&
+            req.query.isSeries !== undefined
+        ) {
+            movies = await Movie.find({
+                isSeries: isSeries,
+                isPersian: isPersian
+            });
+        } else if (req.query.isSeries !== undefined) {
+            movies = await Movie.find({
+                isSeries: isSeries
+            });
+        } else if (req.query.isPersian !== undefined) {
+            movies = await Movie.find({
+                isPersian: isPersian
+            });
+        } else movies = await Movie.find({});
+
+        return res.status(200).json(movies!.reverse());
+    } catch (error) {
+        return res.status(500).json(error);
     }
-    res.status(403).json('not allowed!');
 });
 
 export default router;
